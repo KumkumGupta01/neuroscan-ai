@@ -43,6 +43,7 @@ brain-tumor-segmentation/
 ├── model.py               # Standard PyTorch U-Net with skip connections
 ├── train.py               # Training loop with validation checkpoints
 ├── requirements.txt       # Project dependencies
+├── samples/               # Benchmark MRI slices & masks (positive + normal)
 ├── training_history.json  # Saved metrics per training epoch
 ├── unet_brain_tumor.pth   # Saved model weights checkpoint
 └── README.md              # Project documentation

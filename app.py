@@ -193,10 +193,36 @@ def create_overlay(resized_rgb: np.ndarray, pred_mask: np.ndarray, color=(255, 4
     return overlay
 
 
-def get_benchmark_samples(data_dir: str = "./data/kaggle_3m", cache_file: str = "./data/pairs_cache.csv") -> list:
+def get_benchmark_samples(samples_dir: str = "./samples", data_dir: str = "./data/kaggle_3m", cache_file: str = "./data/pairs_cache.csv") -> list:
     """
-    Finds sample slices with confirmed tumor masks and healthy slices from dataset.
+    Finds sample slices with confirmed tumor masks and healthy slices.
+    Prioritizes the self-contained ./samples/ directory, falling back to data/kaggle_3m.
     """
+    samples_path = Path(samples_dir)
+    if samples_path.exists():
+        candidates = []
+        for p in sorted(samples_path.glob("*.tif")):
+            if p.name.endswith("_mask.tif"):
+                continue
+            mask_p = p.parent / p.name.replace(".tif", "_mask.tif")
+            mask_exists = mask_p.exists()
+            has_pos = False
+            if mask_exists:
+                m = cv2.imread(str(mask_p), cv2.IMREAD_GRAYSCALE)
+                if m is not None and np.sum(m > 0) > 0:
+                    has_pos = True
+            label_prefix = "Tumor Positive" if has_pos else "Normal / Clear"
+            candidates.append({
+                "label": f"{label_prefix} — {p.name}",
+                "image_path": str(p),
+                "mask_path": str(mask_p) if mask_exists else None,
+                "type": "positive" if has_pos else "negative"
+            })
+        if candidates:
+            # Sort so positive samples appear first
+            candidates.sort(key=lambda x: (0 if x["type"] == "positive" else 1, x["label"]))
+            return candidates
+
     if os.path.exists(cache_file):
         try:
             df = pd.read_csv(cache_file)
@@ -350,12 +376,13 @@ def main():
                 if img_bgr is not None:
                     selected_image_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-                mask_gray = cv2.imread(chosen_sample["mask_path"], cv2.IMREAD_GRAYSCALE)
-                if mask_gray is not None:
-                    selected_gt_mask = cv2.resize(mask_gray, (256, 256), interpolation=cv2.INTER_NEAREST)
-                    selected_gt_mask = (selected_gt_mask > 0).astype(np.uint8)
+                if chosen_sample.get("mask_path") and os.path.exists(chosen_sample["mask_path"]):
+                    mask_gray = cv2.imread(chosen_sample["mask_path"], cv2.IMREAD_GRAYSCALE)
+                    if mask_gray is not None:
+                        selected_gt_mask = cv2.resize(mask_gray, (256, 256), interpolation=cv2.INTER_NEAREST)
+                        selected_gt_mask = (selected_gt_mask > 0).astype(np.uint8)
             else:
-                st.info("No samples found in `./data/kaggle_3m`. Please upload an MRI slice below.")
+                st.info("No samples found in `./samples` or `./data/kaggle_3m`. Please upload an MRI slice below.")
 
         else:
             uploaded_file = st.file_uploader(
