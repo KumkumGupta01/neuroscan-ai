@@ -638,8 +638,68 @@ def evaluate():
         output_path=results_dir / "roc_pr_curves.png"
     )
 
+    # 7. Generate Publication-Ready Clinical PDF Diagnostic Report
+    print(f"\n--- Generating Publication-Ready Clinical PDF Diagnostic Report ---")
+    try:
+        from report import generate_pdf_report
+        sample_path = Path("samples/TCGA_CS_4941_19960909_11.tif")
+        if not sample_path.exists() and image_paths:
+            sample_path = image_paths[0]
+
+        if sample_path.exists():
+            rep_rgb, rep_tensor = preprocess_slice(sample_path, img_size=256)
+            with torch.no_grad():
+                rep_logits = production_model(rep_tensor.to(device))
+                rep_prob = torch.sigmoid(rep_logits).squeeze().cpu().numpy()
+            rep_mask = (rep_prob >= 0.50).astype(np.uint8)
+
+            rep_overlay = rep_rgb.copy()
+            mbool = rep_mask > 0
+            if np.any(mbool):
+                rep_overlay[mbool] = (rep_overlay[mbool] * 0.55 + np.array([255, 45, 45]) * 0.45).astype(np.uint8)
+                cnts, _ = cv2.findContours(rep_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cv2.drawContours(rep_overlay, cnts, -1, (255, 235, 59), 2)
+
+            rep_gt = None
+            mask_p = sample_path.parent / sample_path.name.replace(".tif", "_mask.tif")
+            if mask_p.exists():
+                rep_gt = load_ground_truth_mask(mask_p, img_size=256)
+
+            rep_metrics = {
+                "has_tumor": bool(np.sum(rep_mask) > 0),
+                "tumor_pixels": int(np.sum(rep_mask)),
+                "brain_pixels": int(np.sum(rep_rgb > 25)),
+                "tumor_pct_brain": (float(np.sum(rep_mask)) / max(int(np.sum(rep_rgb > 25)), 1)) * 100,
+                "tumor_pct_slice": (float(np.sum(rep_mask)) / (256 * 256)) * 100,
+                "max_confidence": float(np.max(rep_prob)),
+                "mean_confidence": float(np.mean(rep_prob[mbool])) if np.any(mbool) else 0.0,
+                "has_gt": rep_gt is not None,
+                "dice_score": agg_dice,
+                "iou_score": agg_iou,
+                "gt_pixels": int(np.sum(rep_gt)) if rep_gt is not None else 0
+            }
+
+            pdf_bytes = generate_pdf_report(
+                scan_name=sample_path.name,
+                original_rgb=rep_rgb,
+                pred_mask=rep_mask,
+                overlay_rgb=rep_overlay,
+                probs=rep_prob,
+                metrics=rep_metrics,
+                threshold=0.50,
+                gt_mask=rep_gt,
+                results_dir=str(results_dir),
+                benchmark_file="benchmark_results.json"
+            )
+            pdf_out_path = results_dir / "sample_diagnostic_report.pdf"
+            with open(pdf_out_path, "wb") as f:
+                f.write(pdf_bytes)
+            print(f"  [+] Saved Clinical Diagnostic Report: {pdf_out_path.resolve()} ({len(pdf_bytes):,} bytes)")
+    except Exception as e:
+        print(f"  [!] Note on PDF generation: {e}")
+
     print("\n" + "=" * 68)
-    print("SUCCESS: 4-MODEL BENCHMARK & PRESENTATION CHARTS GENERATED")
+    print("SUCCESS: 4-MODEL BENCHMARK, CHARTS & PDF REPORT GENERATED")
     print("=" * 68)
 
 

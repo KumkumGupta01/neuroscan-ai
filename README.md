@@ -86,18 +86,21 @@ brain-tumor-segmentation/
 ├── eval_ml.py             # Diagnostic evaluation script & 300 DPI chart generator
 ├── loss.py                # Combined BCEDiceLoss, Dice coefficient, and IoU evaluation metrics
 ├── model.py               # Multi-model architecture definitions (UNet, FCN8s, ResUNet, AttentionUNet)
+├── report.py              # Clinical PDF diagnostic report generator wrapper
 ├── requirements.txt       # Lightweight dependencies (using opencv-python-headless)
-├── results/               # Presentation-ready 300 DPI charts
+├── results/               # Presentation-ready 300 DPI charts & clinical reports
 │   ├── confusion_matrix.png
 │   ├── model_comparison.png
 │   ├── roc_pr_curves.png
+│   ├── sample_diagnostic_report.pdf  # Publication-ready 2-page clinical report
 │   └── training_curves.png
 ├── samples/               # Benchmark MRI slices & masks (3 positive, 2 normal)
-├── src/                   # Source package with architecture and dataset modules
+├── src/                   # Source package with architecture, dataset, and report modules
 │   ├── __init__.py
 │   ├── dataset.py
 │   ├── loss.py
-│   └── model.py
+│   ├── model.py
+│   └── report.py
 ├── train.py               # 5-epoch training loop with validation checkpoints
 ├── training_history.json  # Saved metrics per training epoch
 ├── unet_brain_tumor.pth   # Saved model weights checkpoint (~51.9 MB)
@@ -119,7 +122,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Run Diagnostic Evaluation Script
-Execute the standalone evaluation script to inspect model parameters, perform forward inference on benchmark slices, and compute tumor metrics:
+Execute the standalone evaluation script to inspect model parameters, perform forward inference on benchmark slices, generate 300 DPI benchmark charts, and produce a sample clinical PDF report:
 ```bash
 python eval_ml.py
 ```
@@ -153,4 +156,9 @@ python train.py --epochs 5 --batch-size 8 --lr 1e-3 --output-weights unet_brain_
    - Tumor Area in pixels and percentage of intracranial brain tissue
    - Peak probability & mean detection confidence
    - Validation against Ground Truth (Dice similarity and IoU) when masks are available
-5. **Exporting:** 1-click export of predicted masks and composite images to PNG.
+5. **Branded Clinical PDF Diagnostic Report:** 1-click download of a publication-ready 2-page clinical evaluation PDF report containing:
+   - Patient / scan metadata, detection confidence threshold ($\tau$), and analysis timestamp.
+   - Synchronized 4-panel visual array (Original MRI, Predicted Mask, Clinical Overlay, Probability Map).
+   - Comprehensive quantitative morphometrics table and formal radiologist attestation card.
+   - Deep learning QA section with the 4-model comparative benchmark table, embedded 300 DPI evaluation charts, and loss specifications.
+6. **PNG Image Export:** Instant export of predicted masks and composite overlay images.

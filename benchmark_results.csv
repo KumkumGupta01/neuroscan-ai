@@ -1,5 +1,5 @@
 model_name,role,parameters,model_size_mb,inference_time_ms,dice_score,iou_score,pixel_accuracy,precision,sensitivity_recall,roc_auc,selection_rationale
-FCN-8s,Coarse Baseline,3011875,11.49,85.9,0.442,0.385,0.974,0.486,0.412,0.835,"Fastest baseline, but 8x upsampling over-smooths fine boundaries, missing small lesions."
-Standard 4-Level U-Net,Selected Final Model (Production),4318401,16.47,236.0,0.53,0.5008,0.9926,0.5942,0.753,0.9856,"Optimal Pareto frontier: Top-tier Dice/IoU accuracy with ~48% fewer parameters than ResUNet and fast ~214ms CPU inference, ideal for lightweight cloud deployment."
-ResUNet,Comparative Baseline,8287841,31.62,399.7,0.512,0.471,0.985,0.578,0.531,0.898,"Deep residual representations improve gradient flow, but 92% more parameters with high CPU latency (~401 ms)."
-Attention U-Net,Comparative Baseline,7851773,29.95,343.6,0.528,0.495,0.987,0.615,0.562,0.915,"Attention gates highlight salient tumor regions, but add substantial computational latency on CPU (~337 ms)."
+FCN-8s,Coarse Baseline,3011875,11.49,88.0,0.442,0.385,0.974,0.486,0.412,0.835,"Fastest baseline, but 8x upsampling over-smooths fine boundaries, missing small lesions."
+Standard 4-Level U-Net,Selected Final Model (Production),4318401,16.47,234.2,0.53,0.5008,0.9926,0.5942,0.753,0.9856,"Optimal Pareto frontier: Top-tier Dice/IoU accuracy with ~48% fewer parameters than ResUNet and fast ~214ms CPU inference, ideal for lightweight cloud deployment."
+ResUNet,Comparative Baseline,8287841,31.62,390.7,0.512,0.471,0.985,0.578,0.531,0.898,"Deep residual representations improve gradient flow, but 92% more parameters with high CPU latency (~401 ms)."
+Attention U-Net,Comparative Baseline,7851773,29.95,347.2,0.528,0.495,0.987,0.615,0.562,0.915,"Attention gates highlight salient tumor regions, but add substantial computational latency on CPU (~337 ms)."

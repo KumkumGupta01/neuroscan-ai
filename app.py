@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from model import UNet
+from report import generate_pdf_report
 
 
 # --- Page Configuration ---
@@ -510,30 +511,71 @@ def main():
                 st.pyplot(fig)
                 plt.close(fig)
 
-            # Download Options
-            st.markdown("#### Export Results")
-            dcol1, dcol2 = st.columns(2)
+            # --- Clinical Report & Export Options ---
+            st.markdown("#### 📄 Clinical Diagnostic Report & Exports")
+
+            # Generate PDF report in-memory
+            pdf_bytes = generate_pdf_report(
+                scan_name=slice_name or "brain_mri_slice",
+                original_rgb=resized_rgb,
+                pred_mask=pred_mask,
+                overlay_rgb=overlay_img,
+                probs=probs,
+                metrics=metrics,
+                threshold=threshold,
+                model_name="Standard 4-Level U-Net (Production)",
+                gt_mask=selected_gt_mask,
+                results_dir="results",
+                benchmark_file="benchmark_results.json"
+            )
+
+            safe_name = os.path.splitext(os.path.basename(slice_name))[0] if slice_name else "diagnostic_report"
+            safe_name = "".join(c for c in safe_name if c.isalnum() or c in ("-", "_"))
+
+            dcol1, dcol2, dcol3 = st.columns([1.5, 1, 1])
             with dcol1:
+                st.download_button(
+                    label="📑 Download Diagnostic Report (PDF)",
+                    data=pdf_bytes,
+                    file_name=f"NeuroScan_Report_{safe_name}.pdf",
+                    mime="application/pdf",
+                    help="Download publication-quality 2-page clinical evaluation PDF report with MRI visuals, quantitative metrics, and multi-model benchmark QA."
+                )
+            with dcol2:
                 # Convert mask to PNG
                 pil_mask = Image.fromarray((pred_mask * 255).astype(np.uint8))
                 buf_mask = io.BytesIO()
                 pil_mask.save(buf_mask, format="PNG")
                 st.download_button(
-                    label="💾 Download Predicted Mask (PNG)",
+                    label="💾 Tumor Mask (PNG)",
                     data=buf_mask.getvalue(),
-                    file_name="predicted_tumor_mask.png",
+                    file_name=f"{safe_name}_mask.png",
                     mime="image/png"
                 )
-            with dcol2:
+            with dcol3:
                 pil_overlay = Image.fromarray(overlay_img)
                 buf_overlay = io.BytesIO()
                 pil_overlay.save(buf_overlay, format="PNG")
                 st.download_button(
-                    label="💾 Download Composite Overlay (PNG)",
+                    label="💾 Overlay Scan (PNG)",
                     data=buf_overlay.getvalue(),
-                    file_name="tumor_overlay_composite.png",
+                    file_name=f"{safe_name}_overlay.png",
                     mime="image/png"
                 )
+
+            with st.expander("ℹ️ Details Included in Clinical PDF Report"):
+                st.markdown("""
+                - **Page 1: Radiological Evidence & Patient Summary**
+                  - Case identifier, scan metadata, timestamp, and detection confidence threshold ($\\tau$)
+                  - Multi-modal visual array: Original MRI, Predicted Segmentation Mask, Color Composite Overlay, Sigmoid Probability Map
+                  - Quantitative Morphometrics: Lesion Pixel Area, Parenchyma Occupancy %, Peak & Mean Confidence Scores, Validation Dice/IoU (if ground truth available)
+                  - Formal Clinical Attestation & Sign-off card
+                - **Page 2: Deep Learning Quality Assurance & Benchmark Verification**
+                  - Complete 4-Model Comparative Benchmark Table (Standard U-Net, Attention U-Net, ResUNet, FCN-8s)
+                  - Embedded 300 DPI Comparative Charts and Pixel-Level Confusion Matrix
+                  - Mathematical loss function formulation ($0.5 \\cdot \\mathcal{L}_{\\text{BCE}} + 0.5 \\cdot \\mathcal{L}_{\\text{Dice}}$) & Adam optimization hyperparameters
+                  - Regulatory research & investigational use disclaimer
+                """)
 
         else:
             st.info("👈 Please select a benchmark slice or upload an MRI slice to begin analysis.")
