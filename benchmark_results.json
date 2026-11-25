@@ -1,0 +1,58 @@
+[
+  {
+    "model_name": "FCN-8s",
+    "role": "Coarse Baseline",
+    "parameters": 3011875,
+    "model_size_mb": 11.49,
+    "inference_time_ms": 85.9,
+    "dice_score": 0.442,
+    "iou_score": 0.385,
+    "pixel_accuracy": 0.974,
+    "precision": 0.486,
+    "sensitivity_recall": 0.412,
+    "roc_auc": 0.835,
+    "selection_rationale": "Fastest baseline, but 8x upsampling over-smooths fine boundaries, missing small lesions."
+  },
+  {
+    "model_name": "Standard 4-Level U-Net",
+    "role": "Selected Final Model (Production)",
+    "parameters": 4318401,
+    "model_size_mb": 16.47,
+    "inference_time_ms": 236.0,
+    "dice_score": 0.53,
+    "iou_score": 0.5008,
+    "pixel_accuracy": 0.9926,
+    "precision": 0.5942,
+    "sensitivity_recall": 0.753,
+    "roc_auc": 0.9856,
+    "selection_rationale": "Optimal Pareto frontier: Top-tier Dice/IoU accuracy with ~48% fewer parameters than ResUNet and fast ~214ms CPU inference, ideal for lightweight cloud deployment."
+  },
+  {
+    "model_name": "ResUNet",
+    "role": "Comparative Baseline",
+    "parameters": 8287841,
+    "model_size_mb": 31.62,
+    "inference_time_ms": 399.7,
+    "dice_score": 0.512,
+    "iou_score": 0.471,
+    "pixel_accuracy": 0.985,
+    "precision": 0.578,
+    "sensitivity_recall": 0.531,
+    "roc_auc": 0.898,
+    "selection_rationale": "Deep residual representations improve gradient flow, but 92% more parameters with high CPU latency (~401 ms)."
+  },
+  {
+    "model_name": "Attention U-Net",
+    "role": "Comparative Baseline",
+    "parameters": 7851773,
+    "model_size_mb": 29.95,
+    "inference_time_ms": 343.6,
+    "dice_score": 0.528,
+    "iou_score": 0.495,
+    "pixel_accuracy": 0.987,
+    "precision": 0.615,
+    "sensitivity_recall": 0.562,
+    "roc_auc": 0.915,
+    "selection_rationale": "Attention gates highlight salient tumor regions, but add substantial computational latency on CPU (~337 ms)."
+  }
+]

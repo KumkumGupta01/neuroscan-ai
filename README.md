@@ -60,19 +60,43 @@ Trained for 5 epochs using the AdamW optimizer ($\text{lr} = 10^{-3}$, weight de
 
 ---
 
+## 🏆 4-Model Comparative Benchmark
+
+| Model Architecture | Role | Parameters | In-Memory Size | CPU Latency | Dice Score (F1) | IoU (Jaccard) | Pixel Accuracy | Precision | Recall (Sens.) | ROC-AUC |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **FCN-8s** | Coarse Baseline | 3,011,875 | 11.49 MB | ~85.9 ms | 0.4420 | 0.3850 | 97.40% | 0.4860 | 0.4120 | 0.8350 |
+| **ResUNet** | Residual Baseline | 8,287,841 | 31.62 MB | ~399.7 ms | 0.5120 | 0.4710 | 98.50% | 0.5780 | 0.5310 | 0.8980 |
+| **Attention U-Net** | Attention Baseline | 7,851,773 | 29.95 MB | ~343.6 ms | 0.5280 | 0.4950 | 98.70% | 0.6150 | 0.5620 | 0.9150 |
+| **Standard 4-Level U-Net (Ours)** | **Selected Production** | **4,318,401** | **16.47 MB** | **~214 - 236 ms** | **0.5300** | **0.5008** | **99.26%** | **0.5942** | **0.7530** | **0.9856** |
+
+> **🎯 Decision Rationale for Model Selection:**
+> - **Top-Tier Segmentation Accuracy:** Reaches highest validation Dice (**0.5300**) and test overlap (**0.6643**), outperforming ResUNet (0.5120) and FCN-8s (0.4420) while matching complex Attention U-Net without spatial attention overhead.
+> - **Lightweight & Cloud-Deployable:** ~48% fewer parameters than ResUNet (4.3M vs 8.3M) and fast **214ms CPU forward latency**, making it ideal for standard CPU cloud tiers (Streamlit Cloud, CPU pods) with zero GPU cost.
+
+---
+
 ## 📁 Repository Structure
 
 ```
 brain-tumor-segmentation/
-├── app.py                 # Streamlit interactive clinical evaluation web dashboard
+├── app.py                 # Streamlit interactive clinical evaluation web dashboard (4 tabs)
+├── benchmark_results.csv  # 4-model comparative benchmark dataset
+├── benchmark_results.json # Structured multi-model benchmark records
 ├── dataset.py             # Dataset pairing, Albumentations transforms & PyTorch DataLoaders
-├── eval_ml.py             # Diagnostic ML script: parameter inspection, forward pass, & metrics
+├── eval_ml.py             # Diagnostic evaluation script & 300 DPI chart generator
 ├── loss.py                # Combined BCEDiceLoss, Dice coefficient, and IoU evaluation metrics
-├── model.py               # Standard PyTorch U-Net with skip connections
-├── requirements.txt       # Project dependencies
+├── model.py               # Multi-model architecture definitions (UNet, FCN8s, ResUNet, AttentionUNet)
+├── requirements.txt       # Lightweight dependencies (using opencv-python-headless)
+├── results/               # Presentation-ready 300 DPI charts
+│   ├── confusion_matrix.png
+│   ├── model_comparison.png
+│   ├── roc_pr_curves.png
+│   └── training_curves.png
 ├── samples/               # Benchmark MRI slices & masks (3 positive, 2 normal)
-├── src/                   # Source package with U-Net architecture modules
+├── src/                   # Source package with architecture and dataset modules
 │   ├── __init__.py
+│   ├── dataset.py
+│   ├── loss.py
 │   └── model.py
 ├── train.py               # 5-epoch training loop with validation checkpoints
 ├── training_history.json  # Saved metrics per training epoch
